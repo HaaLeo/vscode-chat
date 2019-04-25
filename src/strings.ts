@@ -12,6 +12,8 @@ export const SETUP_SLACK = "Set up Slack";
 
 export const SETUP_DISCORD = "Set up Discord";
 
+export const SETUP_MATTERMOST = "Set up Mattermost";
+
 export const REPORT_ISSUE = "Report issue";
 
 export const RETRY = "Retry";

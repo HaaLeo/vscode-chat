@@ -16,8 +16,15 @@ export const setupDiscord = () => {
   );
 };
 
+export const setupMattermost = () => {
+  vscode.commands.executeCommand(SelfCommands.SIGN_IN, {
+    source: EventSource.info,
+    service: "mattermost"
+  });
+};
+
 export const askForAuth = async () => {
-  const actionItems = [str.SETUP_SLACK, str.SETUP_DISCORD];
+  const actionItems = [str.SETUP_SLACK, str.SETUP_DISCORD, str.SETUP_MATTERMOST];
   const selected = await vscode.window.showInformationMessage(
     str.TOKEN_NOT_FOUND,
     ...actionItems
@@ -29,6 +36,9 @@ export const askForAuth = async () => {
       break;
     case str.SETUP_DISCORD:
       setupDiscord();
+      break;
+    case str.SETUP_MATTERMOST:
+      setupMattermost();
       break;
   }
 };
@@ -51,7 +61,8 @@ interface OnboardingTreeNode {
 
 const OnboardingCommands = {
   SETUP_SLACK: "extension.chat.onboarding.slack",
-  SETUP_DISCORD: "extension.chat.onboarding.discord"
+  SETUP_DISCORD: "extension.chat.onboarding.discord",
+  SETUP_MATTERMOST: "extension.chat.onboarding.mattermost"
 };
 
 export class OnboardingTreeProvider
@@ -71,6 +82,10 @@ export class OnboardingTreeProvider
       vscode.commands.registerCommand(
         OnboardingCommands.SETUP_DISCORD,
         setupDiscord
+      ),
+      vscode.commands.registerCommand(
+        OnboardingCommands.SETUP_MATTERMOST,
+        setupMattermost
       )
     );
   }
@@ -82,7 +97,8 @@ export class OnboardingTreeProvider
   getChildren(element?: OnboardingTreeNode) {
     return Promise.resolve([
       { label: str.SETUP_SLACK, command: OnboardingCommands.SETUP_SLACK },
-      { label: str.SETUP_DISCORD, command: OnboardingCommands.SETUP_DISCORD }
+      { label: str.SETUP_DISCORD, command: OnboardingCommands.SETUP_DISCORD },
+      { label: str.SETUP_MATTERMOST, command: OnboardingCommands.SETUP_MATTERMOST }
     ]);
   }
 
