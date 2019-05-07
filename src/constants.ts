@@ -77,5 +77,8 @@ const DISCORD_SCOPE_STRING = DISCORD_SCOPES.join("%20");
 const DISCORD_CLIENT_ID = "486416707951394817";
 export const DISCORD_OAUTH = `https://discordapp.com/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&response_type=code&scope=${DISCORD_SCOPE_STRING}`;
 
+// Mattermost
+export const MATTERMOST_OAUTH = 'http://localhost:8065/oauth/authorize?client_id=78qtzgqeztfu9xi5u3wa9g9cfw&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fmattermost_redirect';
+
 // Telemetry
 export const MIXPANEL_TOKEN = "14c9fea2bf4e06ba766e16eca1bce728";

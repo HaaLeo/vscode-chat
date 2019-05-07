@@ -26,6 +26,13 @@ functions:
       - http:
           method: get
           path: discord_redirect
+  mattermost-redirect:
+    handler: handler.mattermostRedirect
+    timeout: 10
+    events:
+      - http:
+          method: get
+          path: mattermost_redirect
   home:
     handler: handler.home
     events:

@@ -10,8 +10,12 @@
       "type": "extensionHost",
       "request": "launch",
       "runtimeExecutable": "${execPath}",
-      "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
-      "outFiles": ["${workspaceFolder}/out/**/*.js"],
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/out/**/*.js"
+      ],
       "preLaunchTask": "watch",
       "env": {
         "IS_DEBUG": "true"
@@ -26,11 +30,28 @@
         "--extensionDevelopmentPath=${workspaceFolder}",
         "--extensionTestsPath=${workspaceFolder}/out/test"
       ],
-      "outFiles": ["${workspaceFolder}/out/test/**/*.js"],
+      "outFiles": [
+        "${workspaceFolder}/out/test/**/*.js"
+      ],
       "preLaunchTask": "watch",
       "env": {
         "IS_DEBUG": "true"
       }
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Serverless",
+      "program": "${workspaceFolder}/oauth-service/node_modules/serverless/bin/serverless",
+      "args": [
+        "offline",
+        "start"
+      ],
+      "cwd": "${workspaceFolder}/oauth-service",
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceFolder}/oauth-service/.webpack/service/**/*.js"
+      ]
     }
   ]
 }

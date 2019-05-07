@@ -12,7 +12,8 @@ import {
   LIVE_SHARE_BASE_URL,
   CONFIG_ROOT,
   CONFIG_AUTO_LAUNCH,
-  TRAVIS_SCHEME
+  TRAVIS_SCHEME,
+  MATTERMOST_OAUTH
 } from "./constants";
 import travis from "./bots/travis";
 import { ExtensionUriHandler } from "./uriHandler";
@@ -346,10 +347,11 @@ export function activate(context: vscode.ExtensionContext) {
 
   const startOAuth = (args?: any) => {
     const hasArgs = !!args && !!args.source;
-    const provider = "slack"; // Only Slack OAuth is supported
+    const provider: "slack" | "mattermost" = args.service; // Only Slack or Mattermost OAuth is supported
     const urls = {
       slack: SLACK_OAUTH,
-      discord: DISCORD_OAUTH
+      discord: DISCORD_OAUTH,
+      mattermost: MATTERMOST_OAUTH
     };
     telemetry.record(
       EventType.authStarted,
@@ -470,7 +472,7 @@ export function activate(context: vscode.ExtensionContext) {
   };
 
   const configureToken = async () => {
-    const provider = await askForProvider(["slack", "discord"]);
+    const provider = await askForProvider(["slack", "discord", "mattermost"]);
     telemetry.record(
       EventType.tokenConfigured,
       EventSource.command,
@@ -739,4 +741,4 @@ export function activate(context: vscode.ExtensionContext) {
   );
 }
 
-export function deactivate() {}
+export function deactivate() { }

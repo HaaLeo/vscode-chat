@@ -69,6 +69,30 @@ const getDiscordToken = async (code: string): Promise<TokenAPIResponse> => {
   }
 };
 
+const getMattermostToken = async (code: string): Promise<TokenAPIResponse> => {
+  const uri = "http://localhost:8065 /oauth/access_token";
+  var options = {
+    uri: uri,
+    json: true,
+    qs: {
+      client_id: '78qtzgqeztfu9xi5u3wa9g9cfw', // todo remove
+      client_secret: 'zenj4bbpjjyu9jzffy57d1wz7y',
+      // grant_type: 'authorization_code',
+      // redirect_uri: 'http%3A%2F%2Flocalhost%3A3000%2Fmattermost_redirect',
+      code: code
+    }
+  };
+
+  const result = await request.get(options);
+  const { ok, error, access_token, team_id } = result;
+
+  if (!ok) {
+    return { accessToken: null, error };
+  } else {
+    return { accessToken: access_token, teamId: team_id, error: null };
+  }
+};
+
 const renderSuccess = (
   token: string,
   service: string,
@@ -83,6 +107,7 @@ const renderSuccess = (
     },
     body: successHtml
       .replace(/{{redirect}}/g, redirect)
+      .replace(/{{service}}/g, service)
       .replace(/{{token}}/g, token)
   };
   cb(null, response);
@@ -153,6 +178,27 @@ export const discordRedirect: Handler = (
     renderError(error, "discord", cb);
   }
 };
+
+export const mattermostRedirect: Handler = (
+  event: APIGatewayEvent,
+  context: Context,
+  cb: Callback
+) => {
+  const { error, code } = parseQueryParams(event);
+
+  if (!!code) {
+    const tokenPromise = getMattermostToken(code);
+    tokenPromise.then(result => {
+      const { accessToken, error, teamId } = result;
+
+      if (!accessToken) {
+        renderError(error, "mattermost", cb);
+      } else {
+        renderSuccess(accessToken, "mattermost", teamId, cb);
+      }
+    });
+  }
+}
 
 export const home: Handler = (
   event: APIGatewayEvent,

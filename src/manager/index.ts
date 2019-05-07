@@ -8,6 +8,7 @@ import { ConfigHelper } from "../config";
 import { VslsContactProvider } from "./vslsContactProvider";
 import { ChatProviderManager } from "./chatManager";
 import { SelfCommands } from "../constants";
+import { MattermostChatProvider } from "../mattermost/mattermostChatProvider";
 
 export default class Manager implements IManager, vscode.Disposable {
   isTokenInitialized: boolean = false;
@@ -74,6 +75,8 @@ export default class Manager implements IManager, vscode.Disposable {
         return new SlackChatProvider(token, this);
       case "vsls":
         return new VslsChatProvider();
+      case "mattermost":
+        return new MattermostChatProvider(token, this);
       default:
         throw new Error(`unsupport chat provider: ${provider}`);
     }
