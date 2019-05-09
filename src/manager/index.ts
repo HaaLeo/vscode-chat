@@ -8,6 +8,7 @@ import { ConfigHelper } from "../config";
 import { VslsContactProvider } from "./vslsContactProvider";
 import { ChatProviderManager } from "./chatManager";
 import { SelfCommands } from "../constants";
+import { MattermostChatProvider } from "../mattermost/mattermostChatProvider";
 
 export default class Manager implements IManager, vscode.Disposable {
   isTokenInitialized: boolean = false;
@@ -42,6 +43,10 @@ export default class Manager implements IManager, vscode.Disposable {
       providerTeamIds[Providers.discord] = undefined;
     }
 
+    if (!!providerTeamIds[Providers.mattermost]) {
+      providerTeamIds[Providers.mattermost] = undefined;
+    }
+
     return Object.keys(providerTeamIds).map(provider => ({
       provider,
       teamId: providerTeamIds[provider]
@@ -72,8 +77,10 @@ export default class Manager implements IManager, vscode.Disposable {
         return new DiscordChatProvider(token, this);
       case "slack":
         return new SlackChatProvider(token, this);
-      case "vsls":
+        case "vsls":
         return new VslsChatProvider();
+      case "mattermost":
+          return new MattermostChatProvider(token, this);
       default:
         throw new Error(`unsupport chat provider: ${provider}`);
     }

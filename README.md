@@ -16,6 +16,7 @@
 1.  Install the extension from the [VS Marketplace](https://marketplace.visualstudio.com/items?itemName=karigari.chat)
 2.  **For Slack**, run "Sign In with Slack" from the VS Code command palette
 3.  **For Discord**, configure your token with instructions [given here](docs/DISCORD.md)
+3.  **For Mattermost**, configure your token with instructions [given here](docs/MATTERMOST.md)
 4.  To chat with **VS Live Share participants**, start a collaboration session and click the `Chat` status bar item. [See more](#vs-live-share).
 
 Are you a Slack workspace admin? [Approve this app](https://slack.com/apps/ACB4LQKN1-slack-chat-for-vs-code) for your team.

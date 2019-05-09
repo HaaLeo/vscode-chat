@@ -44,7 +44,13 @@
         "chat.slack.legacyToken": {
           "type": "string",
           "default": null,
-          "description": "[Deprecated] Run the \"Sign In with Slack\" command instead."
+          "description": "[Deprecated] Run the \"Sign In with Slack\" command instead.",
+          "deprecationMessage": "[Deprecated] Run the \"Sign In with Slack\" command instead."
+        },
+        "chat.mattermost.serverUrl": {
+          "type": "string",
+          "default": null,
+          "description": "The Mattermost server url."
         },
         "chat.proxyUrl": {
           "type": "string",
@@ -186,6 +192,33 @@
           "name": "Direct Messages",
           "when": "chat:discord"
         }
+      ],
+      "chatActivityViewMattermost": [
+        {
+          "id": "chat.treeView.workspaces.mattermost",
+          "name": "Workspaces",
+          "when": "chat:mattermost"
+        },
+        {
+          "id": "chat.treeView.unreads.mattermost",
+          "name": "Unreads",
+          "when": "chat:mattermost"
+        },
+        {
+          "id": "chat.treeView.channels.mattermost",
+          "name": "Channels",
+          "when": "chat:mattermost"
+        },
+        {
+          "id": "chat.treeView.groups.mattermost",
+          "name": "Groups",
+          "when": "chat:mattermost"
+        },
+        {
+          "id": "chat.treeView.ims.mattermost",
+          "name": "Direct Messages",
+          "when": "chat:mattermost"
+        }
       ]
     },
     "viewsContainers": {
@@ -201,6 +234,12 @@
           "title": "Discord",
           "icon": "public/icons/activity-bar-discord-icon.svg",
           "when": "chat:discord"
+        },
+        {
+          "id": "chatActivityViewMattermost",
+          "title": "Mattermost",
+          "icon": "public/icons/activity-bar-mattermost-icon.svg",
+          "when": "chat:mattermost"
         }
       ]
     },
@@ -238,6 +277,7 @@
     "vscode:prepublish": "npm run compile"
   },
   "devDependencies": {
+    "@types/core-js": "^2.5.0",
     "@types/http-proxy-agent": "^2.0.0",
     "@types/keytar": "^4.0.1",
     "@types/markdown-it": "^0.0.7",
@@ -254,14 +294,17 @@
   },
   "dependencies": {
     "@slack/client": "^4.6.0",
+    "core-js": "^3.0.1",
     "discord.js": "^11.4.2",
     "emoji-js": "^3.4.1",
     "gravatar-api": "^1.5.0",
     "https-proxy-agent": "^2.2.1",
+    "isomorphic-fetch": "^2.2.1",
     "markdown-it": "^8.4.1",
     "markdown-it-slack": "^1.2.0",
     "mattermost-redux": "^5.10.0",
     "mixpanel": "^0.9.2",
+    "regenerator-runtime": "^0.13.2",
     "request": "^2.88.0",
     "request-promise-native": "^1.0.5",
     "semver": "^5.5.1",

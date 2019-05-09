@@ -17,10 +17,9 @@ export const setupDiscord = () => {
 };
 
 export const setupMattermost = () => {
-  vscode.commands.executeCommand(SelfCommands.SIGN_IN, {
-    source: EventSource.info,
-    service: "mattermost"
-  });
+  openUrl(
+    "https://github.com/karigari/vscode-chat/blob/master/docs/MATTERMOST.md"
+  );
 };
 
 export const askForAuth = async () => {

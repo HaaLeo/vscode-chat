@@ -97,6 +97,11 @@ export function activate(context: vscode.ExtensionContext) {
         await askForWorkspace("discord");
       }
     }
+    if (manager.isProviderEnabled(Providers.mattermost)) {
+      if (!manager.getCurrentTeamIdFor(Providers.mattermost)) {
+        await askForWorkspace(Providers.mattermost);
+      }
+    }
 
     // TODO: In discord, user preferences are available after channels are fetched
     manager.updateUserPrefsForAll(); // async update
@@ -470,7 +475,7 @@ export function activate(context: vscode.ExtensionContext) {
   };
 
   const configureToken = async () => {
-    const provider = await askForProvider(["slack", "discord"]);
+    const provider = await askForProvider(["slack", "discord", "mattermost"]);
     telemetry.record(
       EventType.tokenConfigured,
       EventSource.command,

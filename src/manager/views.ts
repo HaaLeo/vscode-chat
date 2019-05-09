@@ -7,7 +7,7 @@ import { VslsSessionTreeProvider } from "../tree/vsls";
 import { VSLS_CHAT_CHANNEL } from "../vslsChat/utils";
 import { setVsContext, difference } from "../utils";
 
-const PROVIDERS_WITH_TREE = ["slack", "discord"];
+const PROVIDERS_WITH_TREE = ["slack", "discord", "mattermost"];
 
 const getStatusItemKey = (provider: string, team: Team) => {
   return `${provider}:${team.id}`;
