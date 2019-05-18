@@ -1,15 +1,22 @@
-require('core-js');
-require('regenerator-runtime/runtime');
-require('isomorphic-fetch');
-const mattermost = require("mattermost-redux/client");
+// Make those available globally
+require("core-js");
+require("regenerator-runtime/runtime");
+require("isomorphic-fetch");
+const WebSocket = require("ws");
+
+const Client4 = require("mattermost-redux/client/client4").default;
 
 export class MattermostChatProvider implements IChatProvider {
     private client: any;
-
-    constructor(private token: string, private manager: IManager) {
-        this.client = mattermost.Client4
-        this.client.setUrl('http://localhost:8065'); // Todo move to settings
+    private wsClient: any;
+    constructor(private token: string, private manager: IManager, private url: string) {
+        this.client = new Client4
+        this.client.setUrl(url);
         this.client.setToken(token)
+        this.wsClient = require("mattermost-redux/client/websocket_client.js").default;
+        this.wsClient.setEventCallback(function (event: any) {
+            console.log(event);
+        });
     }
 
     public async validateToken(): Promise<CurrentUser | undefined> {
@@ -53,22 +60,45 @@ export class MattermostChatProvider implements IChatProvider {
     }
 
     public async fetchChannels(users: Users): Promise<Channel[]> {
-        const currentUser = this.manager.getCurrentUserFor('mattermost')
+        const i = users
+        const currentUser = this.manager.getCurrentUserFor("mattermost")
         const teamId = currentUser ? currentUser.currentTeamId : undefined;
         const channels: Channel[] = [];
 
-        const response = this.client.getMyChannels(teamId);
+        const response: any[] = await this.client.getMyChannels(teamId);
 
 
-        response.forEach((channel: any) => {
+        for (const channel of response) {
+            let type: ChannelType;
+            let name = channel.name
+            switch (channel.type) {
+                case "D":
+                    type = ChannelType.im
+
+                    // If channel is a direct message we need to resolve the name
+                    // Name has structure "otherId__myId"
+                    const otherUserId = channel.name.split("__", 2)[0]
+                    name = users[otherUserId].name
+                    break;
+                case "P":
+                    // Private Channel
+                    type = ChannelType.group;
+                    break;
+                case "O":
+                default:
+                    // Public channel
+                    type = ChannelType.channel
+                    break;
+            }
+
             channels.push({
                 id: channel.id,
-                name: channel.name,
-                type: ChannelType.channel, // Todo retrieve correct type
+                name,
+                type,
                 readTimestamp: channel.update_at, // Todo retrieve correct time
                 unreadCount: 0 // Todo change to proper number
             })
-        });
+        }
 
         return channels;
     }
@@ -78,7 +108,75 @@ export class MattermostChatProvider implements IChatProvider {
     }
 
     public async loadChannelHistory(channelId: string): Promise<ChannelMessages> {
-        return {};
+        const response = await this.client.getPosts(channelId);
+        const messages: ChannelMessages = {};
+
+
+
+        for (const postId in response.posts) {
+            const reactions: MessageReaction[] = []
+            const post = response.posts[postId]
+
+            // Get reactions
+            if (post.has_reactions) {
+                post.metadata.reactions.forEach((reaction: any) => {
+                    const foundReaction = reactions.find(({ name }) => {
+                        return name === reaction.emoji_name ? reaction : undefined;
+                    });
+
+                    if (foundReaction) {
+                        // Update reaction if it already exists
+                        foundReaction.count += 1;
+                        foundReaction.userIds.push(reaction.user_id)
+
+                    } else {
+                        // Add new entry to list
+                        reactions.push({
+                            count: 1,
+                            name: ":" + reaction.emoji_name + ":",
+                            userIds: [reaction.user_id]
+                        })
+                    }
+                });
+            }
+
+            // This post is a reply to another post
+            if (post.parent_id) {
+                const parentPost = response.posts[post.parent_id];
+                const parentMessage = messages[parentPost.create_at];
+                parentMessage.replies[post.create_at] = {
+                    timestamp: post.create_at,
+                    text: post.message,
+                    // attachment, Todo
+                    // textHTML,
+                    userId: post.user_id
+                }
+            }
+            // interface Message {
+            //     timestamp: string;
+            //     userId: string;
+            //     text: string;
+            //     textHTML?: string;
+            //     isEdited?: Boolean;
+            //     attachment?: MessageAttachment;
+            //     content: MessageContent | undefined;
+            //     reactions: MessageReaction[];
+            //     replies: MessageReplies;
+
+            // Todo Attachments
+            const message: Message = {
+                timestamp: post.create_at,
+                userId: post.user_id,
+                text: post.message,
+                isEdited: post.update_at > post.create_at,
+                //textHTML
+                content: undefined,
+                reactions: reactions,
+                replies: {}
+            }
+            messages[post.create_at] = message
+        }
+        return messages;
     }
 
     public async getUserPreferences(): Promise<UserPreferences | undefined> {

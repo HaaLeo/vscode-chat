@@ -110,6 +110,11 @@
         "category": "Chat"
       },
       {
+        "command": "extension.chat.updateMattermostUrl",
+        "title": "Update Mattermost Sever URL",
+        "category": "Chat"
+      },
+      {
         "command": "extension.chat.updateSelfPresence",
         "title": "Update your presence status",
         "category": "Chat"

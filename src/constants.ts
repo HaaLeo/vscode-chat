@@ -32,6 +32,7 @@ export const SelfCommands = {
   RESET_STORE: "extension.chat.reset",
   SETUP_NEW_PROVIDER: "extension.chat.setupNewProvider",
   FETCH_REPLIES: "extension.chat.fetchReplies",
+  UPDATE_MATTERMOST_URL: "extension.chat.updateMattermostUrl",
   UPDATE_MESSAGES: "extension.chat.updateMessages",
   UPDATE_MESSAGE_REPLIES: "extension.chat.updateReplies",
   UPDATE_PRESENCE_STATUSES: "extension.chat.updatePresenceStatuses",

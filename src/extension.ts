@@ -559,6 +559,15 @@ export function activate(context: vscode.ExtensionContext) {
     }
   };
 
+  const updateMattermostUrl = async () => {
+    const url = await vscode.window.showInputBox({
+      placeHolder: str.MATTERMOST_URL_PLACEHOLDER,
+      ignoreFocusOut: true
+    });
+
+    ConfigHelper.updateRootConfig("mattermost.serverUrl", url);
+  }
+
   // Setup real-time messenger and updated local state
   setup(true, undefined);
 
@@ -583,6 +592,10 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand(
       SelfCommands.CONFIGURE_TOKEN,
       configureToken
+    ),
+    vscode.commands.registerCommand(
+      SelfCommands.UPDATE_MATTERMOST_URL,
+      updateMattermostUrl
     ),
     vscode.commands.registerCommand(
       SelfCommands.SEND_MESSAGE,
@@ -744,4 +757,4 @@ export function activate(context: vscode.ExtensionContext) {
   );
 }
 
-export function deactivate() {}
+export function deactivate() { }

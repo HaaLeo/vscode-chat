@@ -71,7 +71,7 @@ export default class Manager implements IManager, vscode.Disposable {
     return this.chatProviders.get(providerName);
   }
 
-  instantiateChatProvider(token: string, provider: string): IChatProvider {
+  async instantiateChatProvider(token: string, provider: string): Promise<IChatProvider> {
     switch (provider) {
       case "discord":
         return new DiscordChatProvider(token, this);
@@ -80,14 +80,19 @@ export default class Manager implements IManager, vscode.Disposable {
         case "vsls":
         return new VslsChatProvider();
       case "mattermost":
-          return new MattermostChatProvider(token, this);
+          let url = ConfigHelper.getRootConfig().get<string>("mattermost.serverUrl", "")
+          if (!url) {
+              await vscode.commands.executeCommand(SelfCommands.UPDATE_MATTERMOST_URL)
+              url = ConfigHelper.getRootConfig().get<string>("mattermost.serverUrl", "")
+          }
+          return new MattermostChatProvider(token, this, url);
       default:
         throw new Error(`unsupport chat provider: ${provider}`);
     }
   }
 
   async validateToken(provider: string, token: string) {
-    const chatProvider = this.instantiateChatProvider(token, provider);
+    const chatProvider = await this.instantiateChatProvider(token, provider);
     const currentUser = await chatProvider.validateToken();
     return currentUser;
   }
@@ -129,7 +134,7 @@ export default class Manager implements IManager, vscode.Disposable {
           const existingProvider = this.chatProviders.get(provider);
 
           if (!existingProvider || existingProvider.teamId !== teamId) {
-            const chatProvider = this.instantiateChatProvider(token, provider);
+            const chatProvider = await this.instantiateChatProvider(token, provider);
             const chatManager = new ChatProviderManager(
               this.store,
               provider,

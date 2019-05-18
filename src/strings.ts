@@ -23,6 +23,8 @@ export const KEYCHAIN_ERROR =
 
 export const TOKEN_PLACEHOLDER = "Paste token here";
 
+export const MATTERMOST_URL_PLACEHOLDER = "Enter mattermost server url here. (E.g: http://localhost:8065)";
+
 export const AUTH_FAILED_MESSAGE =
   "Sign in failed. Help us get better by reporting an issue.";
 
