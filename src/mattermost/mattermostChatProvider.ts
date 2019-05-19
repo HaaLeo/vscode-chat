@@ -1,14 +1,20 @@
-// Make those available globally
 require("core-js");
 require("regenerator-runtime/runtime");
 require("isomorphic-fetch");
-const WebSocket = require("ws");
+
+import {customGlobal} from "../types/customGlobal";
+declare const global: customGlobal;
+
+if (!global.WebSocket) {
+    global.WebSocket = require('ws');
+}
 
 const Client4 = require("mattermost-redux/client/client4").default;
 
 export class MattermostChatProvider implements IChatProvider {
     private client: any;
     private wsClient: any;
+
     constructor(private token: string, private manager: IManager, private url: string) {
         this.client = new Client4
         this.client.setUrl(url);
@@ -17,6 +23,7 @@ export class MattermostChatProvider implements IChatProvider {
         this.wsClient.setEventCallback(function (event: any) {
             console.log(event);
         });
+        this.wsClient.initialize(token, {connectionUrl: `${url}/api/v4/websocket`});
     }
 
     public async validateToken(): Promise<CurrentUser | undefined> {
@@ -60,51 +67,22 @@ export class MattermostChatProvider implements IChatProvider {
     }
 
     public async fetchChannels(users: Users): Promise<Channel[]> {
-        const i = users
         const currentUser = this.manager.getCurrentUserFor("mattermost")
         const teamId = currentUser ? currentUser.currentTeamId : undefined;
-        const channels: Channel[] = [];
 
         const response: any[] = await this.client.getMyChannels(teamId);
 
-
-        for (const channel of response) {
-            let type: ChannelType;
-            let name = channel.name
-            switch (channel.type) {
-                case "D":
-                    type = ChannelType.im
-
-                    // If channel is a direct message we need to resolve the name
-                    // Name has structure "otherId__myId"
-                    const otherUserId = channel.name.split("__", 2)[0]
-                    name = users[otherUserId].name
-                    break;
-                case "P":
-                    // Private Channel
-                    type = ChannelType.group;
-                    break;
-                case "O":
-                default:
-                    // Public channel
-                    type = ChannelType.channel
-                    break;
-            }
-
-            channels.push({
-                id: channel.id,
-                name,
-                type,
-                readTimestamp: channel.update_at, // Todo retrieve correct time
-                unreadCount: 0 // Todo change to proper number
-            })
-        }
+        const channels = await this.convertChannels(response, users);
 
         return channels;
     }
 
     public async fetchChannelInfo(channel: Channel): Promise<Channel | undefined> {
-        return undefined;
+        const response = await this.client.getChannel(channel.id);
+
+        const updatedChannel = await this.convertChannels([response]);
+
+        return updatedChannel[0];
     }
 
     public async loadChannelHistory(channelId: string): Promise<ChannelMessages> {
@@ -133,7 +111,7 @@ export class MattermostChatProvider implements IChatProvider {
                         // Add new entry to list
                         reactions.push({
                             count: 1,
-                            name: ":" + reaction.emoji_name + ":",
+                            name: `:${reaction.emoji_name}:`,
                             userIds: [reaction.user_id]
                         })
                     }
@@ -172,7 +150,7 @@ export class MattermostChatProvider implements IChatProvider {
                 //textHTML
                 content: undefined,
                 reactions: reactions,
-                replies: {}
+                replies: {} // Will be set if parent is detected
             }
             messages[post.create_at] = message
         }
@@ -220,5 +198,66 @@ export class MattermostChatProvider implements IChatProvider {
 
     public async destroy(): Promise<void> {
         return undefined;
+    }
+
+    /**
+     * Retrieve unread messages for a channel.
+     * @param channelId The channel id.
+     */
+    private async getUnreadsForChannel(channelId: string): Promise<any> {
+        // This is not implemented in the Client4 yet.
+        return this.client.doFetch(
+            `${this.client.getUserRoute('me')}/channels/${channelId}/unread`,
+            { method: 'get' })
+    }
+
+    /**
+     * Convert the via the client retrieved channel to the Channels interface.
+     * @param channels An array of channels, retrieved via the client
+     * @returns {array} The converted channels
+     */
+    private async convertChannels(channels: any[], users?: Users): Promise<Channel[]> {
+        const result: Channel[] = [];
+
+        if (!users) {
+            users = await this.fetchUsers();
+        };
+
+        for (const channel of channels) {
+            let type: ChannelType;
+            let name = channel.name;
+            const unreads = await this.getUnreadsForChannel(channel.id);
+            const unreadCount = unreads.msg_count;
+
+            switch (channel.type) {
+                case "D":
+                    type = ChannelType.im;
+
+                    // If channel is a direct message we need to resolve the name
+                    // Name has structure "otherId__myId"
+                    const otherUserId = channel.name.split("__", 2)[0];
+                    name = users[otherUserId].name;
+                    break;
+                case "P":
+                    // Private Channel
+                    type = ChannelType.group;
+                    break;
+                case "O":
+                default:
+                    // Public channel
+                    type = ChannelType.channel;
+                    break;
+            }
+
+            result.push({
+                id: channel.id,
+                name,
+                type,
+                readTimestamp: channel.update_at, // Todo retrieve correct time
+                unreadCount
+            })
+        }
+
+        return result;
     }
 }
