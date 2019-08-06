@@ -1,5 +1,6 @@
 import { isSuperset, difference, toTitleCase } from "../utils";
 import { VSLS_CHAT_CHANNEL } from "../vslsChat/utils";
+import { MattermostChatProvider } from "../mattermost/mattermostChatProvider";
 
 export class ChatProviderManager {
   messages: Messages = {};
@@ -12,7 +13,7 @@ export class ChatProviderManager {
     public teamId: string | undefined,
     private chatProvider: IChatProvider,
     private parentManager: IManager
-  ) {}
+  ) { }
 
   getTeams(): Team[] {
     // Due to design limitation we can only work with one team at a time,
@@ -27,6 +28,17 @@ export class ChatProviderManager {
     return !!currentUser
       ? currentUser.teams.find(team => team.id === currentUser.currentTeamId)
       : undefined;
+  }
+
+  async getProfileImage(url: string): Promise<string> {
+    // Return the url if provider is not mattermost
+    let image = url;
+    // If the provider is mattermost the image needs to be retrieved with the API token
+    if (this.providerName === "mattermost") {
+      image = await (this.chatProvider as MattermostChatProvider).getProfileImage(url);
+
+    }
+    return image;
   }
 
   initializeProvider = async (): Promise<any> => {

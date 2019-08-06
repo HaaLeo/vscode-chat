@@ -23,6 +23,7 @@ export const SelfCommands = {
   OPEN_WEBVIEW: "extension.chat.openChatPanel",
   CHANGE_WORKSPACE: "extension.chat.changeWorkspace",
   CHANGE_CHANNEL: "extension.chat.changeChannel",
+  FETCH_PROFILE_IMAGE: "extension.chat.fetchProfileImage",
   SIGN_IN: "extension.chat.authenticate",
   SIGN_OUT: "extension.chat.signout",
   CONFIGURE_TOKEN: "extension.chat.configureToken",

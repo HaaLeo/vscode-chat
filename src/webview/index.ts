@@ -50,6 +50,10 @@ export default class WebviewContainer {
     );
   }
 
+  updateImage(imageMessage: UIImageMessage) {
+    this.panel.webview.postMessage(imageMessage);
+  }
+
   update(uiMessage: UIMessage) {
     const { messages, users, channel, currentUser } = uiMessage;
     const annotated = this.getAnnotatedMessages(messages, channel, currentUser);
@@ -193,7 +197,7 @@ function getWebviewContent(staticPath: string) {
             v-bind:status="statusText">
           </app-container>
       </div>
-  
+
       <script>
           var app = new Vue({
             el: "#app",
@@ -206,10 +210,23 @@ function getWebviewContent(staticPath: string) {
           });
 
           window.addEventListener('message', event => {
-            app.messages = event.data.messages;
-            app.users = event.data.users;
-            app.channel = event.data.channel
-            app.statusText = event.data.statusText
+
+            console.log(event)
+            debugger;
+            if (event.data.type === 'image_update') {
+              console.log('update image')
+
+              if (event.data.userId in app.users) {
+                Vue.set(app.users[event.data.userId], 'resolvedImage', event.data.image)
+                console.log('updated image')
+                console.log(app.users)
+              }
+            } else {
+              app.messages = event.data.messages;
+              app.users = event.data.users;
+              app.channel = event.data.channel
+              app.statusText = event.data.statusText
+            }
           });
       </script>
   </body>

@@ -667,6 +667,20 @@ export function activate(context: vscode.ExtensionContext) {
       ({ parentTimestamp, provider }) => fetchReplies(provider, parentTimestamp)
     ),
     vscode.commands.registerCommand(
+      SelfCommands.FETCH_PROFILE_IMAGE,
+      async ({ url, provider, userId }) => {
+        const image = await manager.getProfileImage(provider, url);
+          const message: UIImageMessage = {
+            type: 'image_update',
+            image,
+            userId
+          };
+        if (controller.ui) {
+          controller.ui.updateImage(message);
+        }
+      }
+    ),
+    vscode.commands.registerCommand(
       SelfCommands.UPDATE_MESSAGES,
       ({ channelId, messages, provider }) => {
         manager.updateMessages(provider, channelId, messages);

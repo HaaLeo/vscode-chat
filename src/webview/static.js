@@ -17,6 +17,19 @@ function formattedTime(ts) {
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
+function fetchProfilePicture(url, userId) {
+  const i = vscode.postMessage({
+    url,
+    userId,
+    text: "get_profile_image",
+    type: "internal"
+  })
+  // console.log('Hello from UI');
+  // console.log(i);
+  return i;
+  win
+}
+
 Vue.component("app-container", {
   props: ["messages", "users", "channel", "status"],
   template: /* html */ `
@@ -37,7 +50,7 @@ Vue.component("app-container", {
 
 Vue.component("messages-section", {
   props: ["messages", "users"],
-  data: function() {
+  data: function () {
     return {
       messagesLength: 0
     };
@@ -88,7 +101,7 @@ Vue.component("messages-date-group", {
 Vue.component("date-separator", {
   props: ["date"],
   computed: {
-    dateString: function() {
+    dateString: function () {
       const options = { weekday: "long", month: "long", day: "numeric" };
       return new Date(this.date).toLocaleDateString("en-US", options);
     }
@@ -101,17 +114,27 @@ Vue.component("date-separator", {
 Vue.component("message-group", {
   props: ["messages", "allUsers", "userId", "user", "timestamp"],
   computed: {
-    readableTimestamp: function() {
+    readableTimestamp: function () {
       return formattedTime(this.timestamp);
     },
-    userName: function() {
+    userName: function () {
       return this.user ? this.user.name : this.userId;
+    },
+  },
+  methods: {
+    imageSource: function () {
+      if (this.user) {
+        return this.user.resolvedImage ? this.user.resolvedImage : this.user.imageUrl
+      }
     }
+  },
+  beforeMount() {
+    fetchProfilePicture(this.user ? this.user.imageUrl : null, this.userId)
   },
   template: /* html */ `
     <div class="message-group">
       <div class="message-group-image">
-        <img v-bind:src="user ? user.imageUrl : null"></img>
+      <img v-bind:src="imageSource"></img>
       </div>
       <div class="message-group-content">
         <div>
@@ -135,7 +158,7 @@ Vue.component("message-group", {
 Vue.component("message-item", {
   props: ["message", "allUsers"],
   computed: {
-    hasReplies: function() {
+    hasReplies: function () {
       return Object.keys(this.message.replies).length > 0;
     }
   },
@@ -156,13 +179,13 @@ Vue.component("message-item", {
 
 Vue.component("message-replies", {
   props: ["message", "allUsers"],
-  data: function() {
+  data: function () {
     return {
       isExpanded: false
     };
   },
   methods: {
-    expandHandler: function(event) {
+    expandHandler: function (event) {
       this.isExpanded = !this.isExpanded;
 
       if (this.isExpanded) {
@@ -180,13 +203,13 @@ Vue.component("message-replies", {
         }
       }
     },
-    onSubmit: function(text) {
+    onSubmit: function (text) {
       const payload = { text, parentTimestamp: this.message.timestamp };
       sendMessage(payload, "thread_reply");
     }
   },
   computed: {
-    imageUrls: function() {
+    imageUrls: function () {
       const userIds = Object.keys(this.message.replies).map(
         replyTs => this.message.replies[replyTs].userId
       );
@@ -198,13 +221,13 @@ Vue.component("message-replies", {
         .filter(userId => !!this.allUsers[userId].smallImageUrl)
         .map(userId => this.allUsers[userId].smallImageUrl);
     },
-    placeholder: function() {
+    placeholder: function () {
       return "Reply to thread";
     },
-    count: function() {
+    count: function () {
       return Object.keys(this.message.replies).length;
     },
-    expandText: function() {
+    expandText: function () {
       return this.isExpanded ? "Show less" : "Show all";
     }
   },
@@ -238,11 +261,11 @@ Vue.component("message-replies", {
 Vue.component("message-reply-item", {
   props: ["userId", "timestamp", "textHTML", "allUsers"],
   computed: {
-    username: function() {
+    username: function () {
       const user = this.allUsers[this.userId];
       return !!user ? user.name : this.userId;
     },
-    readableTimestamp: function() {
+    readableTimestamp: function () {
       return formattedTime(this.timestamp);
     }
   },
@@ -294,7 +317,7 @@ Vue.component("message-content", {
   // This renders the attachment portion of the message
   props: ["content"],
   computed: {
-    borderColor: function() {
+    borderColor: function () {
       const { borderColor } = this.content;
       const defaultColor = `var(--vscode-scrollbarSlider-activeBackground)`;
       return borderColor ? `#${borderColor}` : defaultColor;
@@ -327,7 +350,7 @@ Vue.component("message-author", {
 Vue.component("message-title", {
   props: ["content"],
   computed: {
-    titleOnclick: function() {
+    titleOnclick: function () {
       return `openLink('${this.content.titleLink}'); return false;`;
     }
   },
@@ -346,7 +369,7 @@ Vue.component("message-title", {
 Vue.component("message-input", {
   props: ["placeholder", "onSubmit"],
   watch: {
-    text: function(newText, oldText) {
+    text: function (newText, oldText) {
       if (newText && !newText.trim()) {
         // This is a bit of a hack: using the command palette to change
         // the channel triggers a newline character in the textarea. In this
@@ -356,7 +379,7 @@ Vue.component("message-input", {
       this.resizeInput();
     }
   },
-  data: function() {
+  data: function () {
     return {
       text: "",
       inComposition: false
@@ -386,18 +409,18 @@ Vue.component("message-input", {
     });
   },
   methods: {
-    onSubmitFunc: function(event) {
+    onSubmitFunc: function (event) {
       this.onSubmit(this.text);
       this.text = "";
     },
-    onFocus: function(event) {
+    onFocus: function (event) {
       return sendMessage("is_focused", "internal");
     },
-    onSelectAll: function(event) {
+    onSelectAll: function (event) {
       // Should we check for keydown.ctrl.65 on Windows?
       this.$refs.messageInput.select();
     },
-    onKeydown: function(event) {
+    onKeydown: function (event) {
       // Usability fixes
       // 1. Multiline support: only when shift + enter are pressed
       // 2. Submit on enter (without shift)
@@ -411,7 +434,7 @@ Vue.component("message-input", {
         }
       }
     },
-    resizeInput: function() {
+    resizeInput: function () {
       const expectedRows = this.text.split("\n").length;
       const input = this.$refs.messageInput;
       if (input && expectedRows !== input.rows) {
@@ -424,12 +447,12 @@ Vue.component("message-input", {
 Vue.component("form-section", {
   props: ["channel", "status"],
   computed: {
-    placeholder: function() {
+    placeholder: function () {
       return `Message ${!!this.channel ? this.channel.name : ""}`;
     }
   },
   methods: {
-    onSubmit: function(text) {
+    onSubmit: function (text) {
       const type = text.startsWith("/") ? "command" : "text";
       sendMessage(text, type);
     }
@@ -457,7 +480,7 @@ Vue.component("status-text", {
 
 Vue.directive("focus", {
   // When the bound element is inserted into the DOM...
-  inserted: function(el) {
+  inserted: function (el) {
     el.focus();
   }
 });

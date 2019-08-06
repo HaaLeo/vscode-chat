@@ -41,7 +41,7 @@ class ViewController {
     ) => void,
     private onUIVisible: (provider: string | undefined) => void,
     private onUIFocus: (provider: string | undefined) => void
-  ) {}
+  ) { }
 
   isUILoaded = () => !!this.ui;
 
@@ -124,22 +124,28 @@ class ViewController {
     return this.sendTextMessage(text);
   };
 
-  handleInternal = (message: any) => {
+  handleInternal = async (message: any): Promise<any> => {
     const { text } = message;
 
     if (text === "is_ready") {
       this.isUIReady = true;
       return this.pendingMessage ? this.sendToUI(this.pendingMessage) : null;
     }
-
-    if (text === "is_focused") {
+    else if (text === "is_focused") {
       this.onUIFocus(this.currentProvider);
     }
-
-    if (text === "fetch_replies") {
+    else if (text === "fetch_replies") {
       const { parentTimestamp } = message;
       vscode.commands.executeCommand(SelfCommands.FETCH_REPLIES, {
         parentTimestamp,
+        provider: this.currentProvider
+      });
+    }
+    else if (text === "get_profile_image") {
+      const { url, userId } = message;
+      vscode.commands.executeCommand(SelfCommands.FETCH_PROFILE_IMAGE, {
+        url,
+        userId,
         provider: this.currentProvider
       });
     }
@@ -161,13 +167,13 @@ class ViewController {
     });
   };
 
-  sendToExtension = (message: ExtensionMessage) => {
+  sendToExtension = async (message: ExtensionMessage) => {
     const { type, text } = message;
     Logger.log(`Sending to extension (${type}) ${text}`);
 
     switch (type) {
       case "internal":
-        return this.handleInternal(message);
+        return await this.handleInternal(message);
       case "link":
         return this.dispatchCommand({ namespace: "open", subcommand: text });
       case "command":

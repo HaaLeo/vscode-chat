@@ -193,6 +193,11 @@ interface UIMessage {
   statusText: string;
 }
 
+interface UIImageMessage {
+  userId: string;
+  image: string,
+  type: string;
+}
 interface UIMessageDateGroup {
   groups: UIMessageGroup[];
   date: string;

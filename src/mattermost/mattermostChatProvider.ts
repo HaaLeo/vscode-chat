@@ -2,7 +2,7 @@ require("core-js");
 require("regenerator-runtime/runtime");
 require("isomorphic-fetch");
 
-import {customGlobal} from "../types/customGlobal";
+import { customGlobal } from "../types/customGlobal";
 declare const global: customGlobal;
 
 if (!global.WebSocket) {
@@ -10,6 +10,8 @@ if (!global.WebSocket) {
 }
 
 const Client4 = require("mattermost-redux/client/client4").default;
+
+import * as rp from "request-promise-native";
 
 export class MattermostChatProvider implements IChatProvider {
     private client: any;
@@ -23,7 +25,7 @@ export class MattermostChatProvider implements IChatProvider {
         this.wsClient.setEventCallback(function (event: any) {
             console.log(event);
         });
-        this.wsClient.initialize(token, {connectionUrl: `${url}/api/v4/websocket`});
+        this. wsClient.initialize(token, { connectionUrl: `${url}/api/v4/websocket` });
     }
 
     public async validateToken(): Promise<CurrentUser | undefined> {
@@ -43,7 +45,8 @@ export class MattermostChatProvider implements IChatProvider {
         const users: Users = {};
 
         for (const profile of profiles) {
-            const imageUrl = await this.client.getProfilePictureUrl(profile.id);
+            // Get the actual image, because retrieving the image via the url requires the API token
+            let imageUrl = this.client.getProfilePictureUrl(profile.id);
             const presence = await this.client.getStatus(profile.id);
             const user: User = {
                 id: profile.id,
@@ -209,6 +212,18 @@ export class MattermostChatProvider implements IChatProvider {
         return this.client.doFetch(
             `${this.client.getUserRoute('me')}/channels/${channelId}/unread`,
             { method: 'get' })
+    }
+
+    public async getProfileImage(url: string): Promise<string> {
+        // This is not implemented in the Client4 yet.
+        const response = await rp.get(url, {
+            headers: {
+              Authorization: `BEARER ${this.token}`
+            },
+            encoding: null
+          });
+        const image = 'data:image/png;base64,' + Buffer.from(response).toString('base64');
+        return image;
     }
 
     /**

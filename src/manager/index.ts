@@ -71,6 +71,15 @@ export default class Manager implements IManager, vscode.Disposable {
     return this.chatProviders.get(providerName);
   }
 
+  async getProfileImage(provider: string, url: string): Promise<string>{
+    const cp = this.chatProviders.get(provider as Providers);
+    if (cp) {
+      return cp.getProfileImage(url);
+    } else {
+      return url;
+    }
+  }
+
   async instantiateChatProvider(token: string, provider: string): Promise<IChatProvider> {
     switch (provider) {
       case "discord":
