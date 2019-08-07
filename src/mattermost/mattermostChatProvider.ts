@@ -92,8 +92,6 @@ export class MattermostChatProvider implements IChatProvider {
         const response = await this.client.getPosts(channelId);
         const messages: ChannelMessages = {};
 
-
-
         for (const postId in response.posts) {
             const reactions: MessageReaction[] = []
             const post = response.posts[postId]
@@ -133,16 +131,6 @@ export class MattermostChatProvider implements IChatProvider {
                     userId: post.user_id
                 }
             }
-            // interface Message {
-            //     timestamp: string;
-            //     userId: string;
-            //     text: string;
-            //     textHTML?: string;
-            //     isEdited?: Boolean;
-            //     attachment?: MessageAttachment;
-            //     content: MessageContent | undefined;
-            //     reactions: MessageReaction[];
-            //     replies: MessageReplies;
 
             // Todo Attachments
             const message: Message = {

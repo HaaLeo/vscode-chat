@@ -211,15 +211,9 @@ function getWebviewContent(staticPath: string) {
 
           window.addEventListener('message', event => {
 
-            console.log(event)
-            debugger;
             if (event.data.type === 'image_update') {
-              console.log('update image')
-
               if (event.data.userId in app.users) {
                 Vue.set(app.users[event.data.userId], 'resolvedImage', event.data.image)
-                console.log('updated image')
-                console.log(app.users)
               }
             } else {
               app.messages = event.data.messages;

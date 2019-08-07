@@ -120,15 +120,19 @@ Vue.component("message-group", {
     userName: function () {
       return this.user ? this.user.name : this.userId;
     },
-  },
-  methods: {
     imageSource: function () {
-      if (this.user) {
-        return this.user.resolvedImage ? this.user.resolvedImage : this.user.imageUrl
+      const currentUser = this.allUsers[this.userId];
+      if (currentUser) {
+        return currentUser.resolvedImage ? currentUser.resolvedImage : currentUser.imageUrl
       }
     }
   },
-  beforeMount() {
+  beforeUpdate() {
+    if (!this.allUsers[this.userId].resolvedImage){
+      fetchProfilePicture(this.user ? this.user.imageUrl : null, this.userId)
+    }
+  },
+  mounted() {
     fetchProfilePicture(this.user ? this.user.imageUrl : null, this.userId)
   },
   template: /* html */ `
@@ -216,11 +220,12 @@ Vue.component("message-replies", {
       const uniques = userIds.filter(
         (item, pos) => userIds.indexOf(item) == pos
       );
-      return uniques
+      const result = uniques
         .filter(userId => userId in this.allUsers)
-        .filter(userId => !!this.allUsers[userId].smallImageUrl)
-        .map(userId => this.allUsers[userId].smallImageUrl);
-    },
+        .filter(userId => !!this.allUsers[userId].smallImageUrl || !!this.allUsers[userId].resolvedImage)
+        .map(userId => this.allUsers[userId].resolvedImage ? this.allUsers[userId].resolvedImage : this.allUsers[userId].smallImageUrl);
+      return result
+      },
     placeholder: function () {
       return "Reply to thread";
     },
@@ -282,9 +287,18 @@ Vue.component("message-reply-item", {
 
 Vue.component("message-replies-images", {
   props: ["images"],
+  methods: {
+    imageHeight: function (url) {
+      let height = '100';
+      if (url.startsWith('data:image/png;base64,')) {
+        height = '20'
+      }
+      return height + '%'
+    }
+  },
   template: /* html */ `
     <div class="reply-images-container">
-      <img v-for="url in images" v-bind:src="url" class="reply-image"></img>
+      <img v-for="url in images" v-bind:src="url" v-bind:style="{ height: imageHeight(url); width: imageHeight(url); }" class="reply-image"></img>
     </div>
   `
 });
