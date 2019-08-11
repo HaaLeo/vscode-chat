@@ -66,7 +66,18 @@ export class MattermostChatProvider implements IChatProvider {
 
     public async fetchUserInfo(userId: string): Promise<User | undefined> {
         const user = await this.client.getUser(userId);
-        return undefined;
+        const imageUrl = this.client.getProfilePictureUrl(userId);
+        const presence = await this.client.getStatus(userId);
+        return {
+            email: user.email,
+            fullName: user.first_name + ' ' + user.last_name,
+            id: user.id,
+            imageUrl,
+            name: user.username,
+            smallImageUrl: imageUrl,
+            presence,
+            roleName: user.roles
+        };
     }
 
     public async fetchChannels(users: Users): Promise<Channel[]> {
@@ -93,31 +104,9 @@ export class MattermostChatProvider implements IChatProvider {
         const messages: ChannelMessages = {};
 
         for (const postId in response.posts) {
-            const reactions: MessageReaction[] = []
             const post = response.posts[postId]
+            const reactions = this.getReactions(post);
 
-            // Get reactions
-            if (post.has_reactions) {
-                post.metadata.reactions.forEach((reaction: any) => {
-                    const foundReaction = reactions.find(({ name }) => {
-                        return name === reaction.emoji_name ? reaction : undefined;
-                    });
-
-                    if (foundReaction) {
-                        // Update reaction if it already exists
-                        foundReaction.count += 1;
-                        foundReaction.userIds.push(reaction.user_id)
-
-                    } else {
-                        // Add new entry to list
-                        reactions.push({
-                            count: 1,
-                            name: `:${reaction.emoji_name}:`,
-                            userIds: [reaction.user_id]
-                        })
-                    }
-                });
-            }
 
             // This post is a reply to another post
             if (post.parent_id) {
@@ -138,7 +127,6 @@ export class MattermostChatProvider implements IChatProvider {
                 userId: post.user_id,
                 text: post.message,
                 isEdited: post.update_at > post.create_at,
-                //textHTML
                 content: undefined,
                 reactions: reactions,
                 replies: {} // Will be set if parent is detected
@@ -149,15 +137,51 @@ export class MattermostChatProvider implements IChatProvider {
     }
 
     public async getUserPreferences(): Promise<UserPreferences | undefined> {
+        // Not possible to mute single channel
         return undefined;
     }
 
     public async markChannel(channel: Channel, ts: string): Promise<Channel | undefined> {
-        return undefined;
+        await this.client.viewMyChannel(channel.id, channel.id);
+         return undefined;
     }
 
     public async fetchThreadReplies(channelId: string, ts: string): Promise<Message | undefined> {
-        return undefined;
+        const response = await this.client.getPostsSince(channelId, Number(ts)-1);
+
+        // Get parent post and reactions
+        const parentPostId = response.posts.find((postId: string) => response.posts[postId].create_at === Number(ts));
+        const parentPost = response.posts[parentPostId];
+        const reactions = this.getReactions(parentPost);
+
+
+        // Fetch replies
+        const replies: MessageReplies = {};
+        for (const postId in response.posts) {
+            const currentPost = response.posts[postId];
+
+            if (currentPost.parent_id === parentPostId) {
+                replies[currentPost.create_at] = {
+                    timestamp: currentPost.create_at,
+                    text: currentPost.message,
+                    // attachment, Todo
+                    userId: currentPost.user_id
+                }
+            }
+        }
+
+        // Build final message with replies
+        const message: Message = {
+            timestamp: parentPost.create_at,
+            userId: parentPost.user_id,
+            text: parentPost.message,
+            isEdited: parentPost.update_at > parentPost.create_at,
+            //textHTML
+            content: undefined,
+            reactions: reactions,
+            replies
+        }
+        return message;
     }
 
     public async sendMessage(text: string, currentUserId: string, channelId: string): Promise<void> {
@@ -262,5 +286,37 @@ export class MattermostChatProvider implements IChatProvider {
         }
 
         return result;
+    }
+
+    /**
+     * Get the reactions for the given post
+     * @param post The post retrieved from the mattermost API client.
+     */
+    private getReactions(post: any): MessageReaction[] {
+        const reactions: MessageReaction[] = []
+
+        if (post.has_reactions) {
+            post.metadata.reactions.forEach((reaction: any) => {
+                const foundReaction = reactions.find(({ name }) => {
+                    return name === reaction.emoji_name ? reaction : undefined;
+                });
+
+                if (foundReaction) {
+                    // Update reaction if it already exists
+                    foundReaction.count += 1;
+                    foundReaction.userIds.push(reaction.user_id)
+
+                } else {
+                    // Add new entry to list
+                    reactions.push({
+                        count: 1,
+                        name: `:${reaction.emoji_name}:`,
+                        userIds: [reaction.user_id]
+                    })
+                }
+            });
+        }
+
+        return reactions;
     }
 }
