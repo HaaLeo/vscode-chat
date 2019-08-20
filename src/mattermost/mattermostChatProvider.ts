@@ -150,7 +150,12 @@ export class MattermostChatProvider implements IChatProvider {
         const response = await this.client.getPostsSince(channelId, Number(ts)-1);
 
         // Get parent post and reactions
-        const parentPostId = response.posts.find((postId: string) => response.posts[postId].create_at === Number(ts));
+        let parentPostId = '';
+        for (const postId in response.posts) {
+            if (response.posts[postId].create_at === Number(ts)) {
+                parentPostId = postId;
+            }
+        }
         const parentPost = response.posts[parentPostId];
         const reactions = this.getReactions(parentPost);
 
@@ -185,10 +190,31 @@ export class MattermostChatProvider implements IChatProvider {
     }
 
     public async sendMessage(text: string, currentUserId: string, channelId: string): Promise<void> {
-        return undefined;
+        const post = {
+            message: text,
+            channel_id: channelId
+        }
+        // Todo check how to attach files
+        return this.client.createPost(post);
     }
+
     public async sendThreadReply(text: string, currentUserId: string, channelId: string, parentTimestamp: string): Promise<void> {
-        return undefined;
+        const response = await this.client.getPostsSince(channelId, Number(parentTimestamp)-1);
+
+        // Get parent post and reactions
+        let parentPostId = undefined;
+        for (const postId in response.posts) {
+            if (response.posts[postId].create_at === Number(parentTimestamp)) {
+                parentPostId = postId;
+            }
+        }
+        const post = {
+            message: text,
+            channel_id: channelId,
+            root_id: parentPostId
+        }
+        // Todo check how to attach files
+        return this.client.createPost(post);
     }
 
     public async connect(): Promise<CurrentUser | undefined> {
