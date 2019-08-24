@@ -16,16 +16,14 @@ import * as rp from "request-promise-native";
 export class MattermostChatProvider implements IChatProvider {
     private client: any;
     private wsClient: any;
+    private connected: boolean;
 
     constructor(private token: string, private manager: IManager, private url: string) {
+        this.connected = false
         this.client = new Client4
         this.client.setUrl(url);
         this.client.setToken(token)
         this.wsClient = require("mattermost-redux/client/websocket_client.js").default;
-        this.wsClient.setEventCallback(function (event: any) {
-            console.log(event);
-        });
-        this. wsClient.initialize(token, { connectionUrl: `${url}/api/v4/websocket` });
     }
 
     public async validateToken(): Promise<CurrentUser | undefined> {
@@ -218,11 +216,29 @@ export class MattermostChatProvider implements IChatProvider {
     }
 
     public async connect(): Promise<CurrentUser | undefined> {
+        this.wsClient.setFirstConnectCallback(()=>{
+            this.connected = true;
+        });
+
+        this.wsClient.setReconnectCallback(()=>{
+            this.connected = true;
+        });
+
+        this.wsClient.setErrorCallback(()=>{
+            this.connected = false;
+        });
+
+        this.wsClient.setCloseCallback(()=>{
+            this.connected = false;
+        });
+
+        await this.wsClient.initialize(this.token, { connectionUrl: `${this.url}/api/v4/websocket` });
+
         return this.validateToken();
     }
 
     public isConnected(): boolean {
-        return true;
+        return this.connected;
     }
 
     public async updateSelfPresence(presence: UserPresence, durationInMinutes: number): Promise<UserPresence | undefined> {
@@ -230,6 +246,9 @@ export class MattermostChatProvider implements IChatProvider {
     }
 
     public subscribePresence(users: Users): void {
+        this.wsClient.setEventCallback(function (event: any) {
+            console.log(event);
+        });
 
     }
 
@@ -238,7 +257,7 @@ export class MattermostChatProvider implements IChatProvider {
     }
 
     public async destroy(): Promise<void> {
-        return undefined;
+        return this.wsClient.close();
     }
 
     /**
